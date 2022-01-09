@@ -1,2 +1,5 @@
 .vagrant/
 .DS_Store
+.idea/
+apps/wiregaurd_manager/.env
+apps/wiregaurd_manager/venv
