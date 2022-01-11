@@ -1,53 +1,58 @@
-from dotenv import load_dotenv
+import json
+
+from timeloop import Timeloop
+from timeloop.job import Job
 import requests
-import os
+
+from datetime import timedelta
+
+time_loop = Timeloop()
 
 
-class OverlayManager:
-    DEFAULT_LISTEN_PORT = 51830
+class WireguardManager:
 
-    def __init__(self, overlay_id, api_key, management_server_addr, **kwargs):
-        self.overlay_id = overlay_id
-        self.api_key = api_key
-        self.management_server_addr = management_server_addr
+    def __init__(self):
+        self.config = {}
+        self._load_config_file()
+        self.management_server_addr = self.config.get("manager_server_address")
 
-        self.device_id = None
-        self.virtual_address = None
-        self.public_address = None
-        self.listen_port = kwargs.get("listen_port") if kwargs.get("listen_port") else self.DEFAULT_LISTEN_PORT
-        self.token = None
+        time_loop.jobs.append(Job(timedelta(minutes=1), self._renew_tokens))
+        time_loop.jobs.append(Job(timedelta(minutes=2), self._update_wireguard_config))
 
-    def _subscribe_device(self):
-        pass
+    def _load_config_file(self):
+        with open("config.json", "r") as file:
+            self.config = json.load(file)
 
-    def _request_token(self):
-        response = requests.get(f"{self.management_server_addr}/devices/{self.device_id}/token")
-        self.token = {
-            "token": response.json()["token"],
-            "expiry_ts": response.json()["expiry_ts"]
-        }
+        with open("sample_config", "r") as file:
+            sample = file.read()
 
-    def _add_device_to_overlay(self):
-        pass
+        for interface in self.config.get("interfaces"):
+            with open(interface["private_key_filepath"], "r") as file:
+                interface["private_key"] = file.read()
 
-    def _save_wiregaurd_config(self):
+            interface["config"] = sample.format(private_key=interface["private_key"],
+                                                virtual_address=interface["virtual_address"],
+                                                listen_port=interface["listen_port"])
+
+    def _renew_tokens(self):
+        for interface in self.config.get("interfaces"):
+            response = requests.get(f"{self.management_server_addr}/devices/{interface['device_id']}/token", headers={
+                "Authorization": f"Bearer {interface['token']}",
+                "Content-Type": "application/json"
+            })
+
+            interface["token"] = response.json()["token"]
+            interface["token_expiry_ts"] = response.json()["expiry_ts"]
+
+    def _update_wireguard_config(self):
         pass
 
     def start(self):
-        self._subscribe_device()
-        self._request_token()
-        self._add_device_to_overlay()
-        self._save_wiregaurd_config()
+        self._renew_tokens()
+        self._update_wireguard_config()
+        time_loop.start(block=True)
 
 
 if __name__ == "__main__":
-    load_dotenv()
-    if os.environ.get("OVERLAY_ID") and os.environ.get("API_KEY") and os.environ.get("SERVER_ADDR"):
-        manager = OverlayManager(
-            overlay_id=os.environ["OVERLAY_ID"],
-            api_key=os.environ["API_KEY"],
-            management_server_addr=os.environ["SERVER_ADDR"]
-        )
-        manager.start()
-    else:
-        raise Exception("OVERLAY_ID, API_KEY, and SERVER_ADDR environment variables should be declared")
+    manager = WireguardManager()
+    manager.start()

@@ -1,0 +1,5 @@
+[Interface]
+PrivateKey = {private_key}
+Address = {virtual_address}
+ListenPort = {listen_port}
+
