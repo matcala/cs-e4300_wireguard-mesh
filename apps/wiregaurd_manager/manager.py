@@ -17,8 +17,9 @@ class WireguardManager:
         self._load_config_file()
         self.management_server_addr = self.config.get("manager_server_address")
 
-        time_loop.jobs.append(Job(timedelta(minutes=1), self._renew_tokens))
-        time_loop.jobs.append(Job(timedelta(minutes=2), self._update_wireguard_config))
+        time_loop.jobs.append(Job(timedelta(minutes=self.config["token_refresh_interval"]), self._renew_tokens))
+        time_loop.jobs.append(
+            Job(timedelta(minutes=self.config["config_update_interval"]), self._update_wireguard_config))
 
     def _load_config_file(self):
         with open("config.json", "r") as file:
@@ -63,6 +64,7 @@ class WireguardManager:
             if response.status_code == 200:
                 peer_config = response.content.decode().replace(": ", ":")
                 peer_config = re.sub(r"Peer \d+", "Peer", peer_config)
+                peer_count = peer_config.count("[Peer]")  # TODO check if restart of the interface is required
 
                 with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
                     file.write(interface["config"] + peer_config)
