@@ -5,6 +5,7 @@ from timeloop.job import Job
 import requests
 
 from datetime import timedelta
+import re
 
 time_loop = Timeloop()
 
@@ -28,7 +29,7 @@ class WireguardManager:
 
         for interface in self.config.get("interfaces"):
             with open(interface["private_key_filepath"], "r") as file:
-                interface["private_key"] = file.read()
+                interface["private_key"] = file.read().strip()
 
             interface["config"] = sample.format(private_key=interface["private_key"],
                                                 virtual_address=interface["virtual_address"],
@@ -41,11 +42,32 @@ class WireguardManager:
                 "Content-Type": "application/json"
             })
 
-            interface["token"] = response.json()["token"]
-            interface["token_expiry_ts"] = response.json()["expiry_ts"]
+            if response.status_code == 200:
+                interface["token"] = response.json()["token"]
+                interface["token_expiry_ts"] = response.json()["expiry_ts"]
+            else:
+                print(f"Error updating token of {interface['name']}")
+
+        with open("config.json", "w") as file:
+            file.write(json.dumps(self.config))
 
     def _update_wireguard_config(self):
-        pass
+        for interface in self.config.get("interfaces"):
+            response = requests.get(
+                f"{self.management_server_addr}/overlays/{interface['overlay_id']}/devices/{interface['device_id']}/wgconfig",
+                headers={
+                    "Authorization": f"Bearer {interface['token']}",
+                    "Content-Type": "application/json"
+                })
+
+            if response.status_code == 200:
+                peer_config = response.content.decode().replace(": ", ":")
+                peer_config = re.sub(r"Peer \d+", "Peer", peer_config)
+
+                with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
+                    file.write(interface["config"] + peer_config)
+            else:
+                print(f"Error updating config file of {interface['name']}")
 
     def start(self):
         self._renew_tokens()

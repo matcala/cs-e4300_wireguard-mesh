@@ -1,15 +1,1 @@
-{
-  "interfaces": [
-    {
-      "interface_name": "wg0",
-      "overlay_id": "aaa714464dd448439924c7e5908b5f0c",
-      "device_id": "00f87c314be94f03b6d2f55d4b6f26e9",
-      "virtual_address": "10.0.0.1/24",
-      "private_key_filepath": "/etc/wireguard/privatekey1",
-      "listen_port": 51820,
-      "token": "hgfHjyINC7VZ_Q5kaGbI1w",
-      "token_expiry_ts": "1641912037.2084887"
-    }
-  ],
-  "manager_server_address": "http://meshmash.vikaa.fi:49328"
-}
+{"interfaces": [{"name": "wg0", "overlay_id": "aaa714464dd448439924c7e5908b5f0c", "device_id": "00f87c314be94f03b6d2f55d4b6f26e9", "virtual_address": "10.0.0.1/24", "private_key_filepath": "/etc/wireguard/privatekey1", "listen_port": 51820, "token": "pWZvt6DeKf1iYDJZJkdf_A", "token_expiry_ts": 1641917487.9634814, "private_key": "test", "config": "[Interface]\nPrivateKey = test\nAddress = 10.0.0.1/24\nListenPort = 51820\n\n"}], "manager_server_address": "http://meshmash.vikaa.fi:49328"}
