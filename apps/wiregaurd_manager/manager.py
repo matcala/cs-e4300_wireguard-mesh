@@ -6,6 +6,8 @@ import requests
 
 from datetime import timedelta
 import re
+import hashlib
+import os
 
 time_loop = Timeloop()
 
@@ -64,7 +66,13 @@ class WireguardManager:
             if response.status_code == 200:
                 peer_config = response.content.decode().replace(": ", ":")
                 peer_config = re.sub(r"Peer \d+", "Peer", peer_config)
-                peer_count = peer_config.count("[Peer]")  # TODO check if restart of the interface is required
+
+                peer_config_hash = hashlib.sha256(peer_config.encode())
+
+                if interface.get("config_hash") != peer_config_hash:
+                    os.system(f"systemctl restart wg-quick@{interface['name']}")
+
+                interface["config_hash"] = peer_config_hash
 
                 with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
                     file.write(interface["config"] + peer_config)
