@@ -9,34 +9,82 @@ import re
 import hashlib
 import os
 
+from apps.wiregaurd_manager.exceptions import StartupError
+
 time_loop = Timeloop()
 
 
 class WireguardManager:
+    CONFIG_FILE_PARAMETERS = ["interfaces", "manager_server_address"]
+    INTERFACE_CONFIG_PARAMETERS = ["name", "overlay_id", "device_id", "virtual_address", "listen_port", "token"]
 
     def __init__(self):
         self.config = {}
-        self._load_config_file()
-        self.management_server_addr = self.config.get("manager_server_address")
+        self.fail_reason = ""
 
-        time_loop.jobs.append(Job(timedelta(minutes=self.config["token_refresh_interval"]), self._renew_tokens))
-        time_loop.jobs.append(
-            Job(timedelta(minutes=self.config["config_update_interval"]), self._update_wireguard_config))
+    def _is_config_valid(self, config: dict):
+        config_keys = config.keys()
+        for key in self.CONFIG_FILE_PARAMETERS:
+            if key not in config_keys:
+                self.fail_reason = f"{key} missing from the config file"
+                return False
+
+        for interface in config["interfaces"]:
+            interface_keys = interface.keys()
+            for key in self.INTERFACE_CONFIG_PARAMETERS:
+                if key not in interface_keys:
+                    self.fail_reason = f"{key} missing from the interface config"
+                    return False
+
+        return True
+
+    def _setup_key_pair(self, interface):
+        private_key_path = f"/etc/wireguard/privatekey_{interface.get('name')}"
+        public_key_path = f"/etc/wireguard/publickey-{interface.get('name')}"
+
+        os.system("umask 077 /etc/wireguard")
+        os.system(f"wg genkey | tee {private_key_path} | wg pubkey > {public_key_path}")
+
+        with open(private_key_path, "r") as file:
+            interface["private_key"] = file.read().strip()
+
+        with open(public_key_path, "r") as file:
+            updated_data = {
+                "public_key": file.read().strip()
+            }
+
+        response = requests.put(f"{self.management_server_addr}/devices/{interface['device_id']}", data=updated_data,
+                                headers={
+                                    "Authorization": f"Bearer {interface['token']}",
+                                    "Content-Type": "application/json"
+                                })
+
+        if response:
+            interface["private_key_path"] = private_key_path
+            interface["public_key_path"] = public_key_path
+        else:
+            raise StartupError(f"Could not update {interface['name']}'s public key")
 
     def _load_config_file(self):
         with open("config.json", "r") as file:
             self.config = json.load(file)
 
-        with open("sample_config", "r") as file:
-            sample = file.read()
+        if self._is_config_valid(self.config):
+            self.management_server_addr = self.config["manager_server_address"]
+            time_loop.jobs.append(Job(timedelta(minutes=self.config["token_refresh_interval"]), self._renew_tokens))
+            time_loop.jobs.append(
+                Job(timedelta(minutes=self.config["config_update_interval"]), self._update_wireguard_config))
 
-        for interface in self.config.get("interfaces"):
-            with open(interface["private_key_filepath"], "r") as file:
-                interface["private_key"] = file.read().strip()
+            with open("sample_config", "r") as file:
+                sample = file.read()
 
-            interface["config"] = sample.format(private_key=interface["private_key"],
-                                                virtual_address=interface["virtual_address"],
-                                                listen_port=interface["listen_port"])
+            for interface in self.config.get("interfaces"):
+                self._setup_key_pair(interface)
+                interface["config"] = sample.format(private_key=interface["private_key"],
+                                                    virtual_address=interface["virtual_address"],
+                                                    listen_port=interface["listen_port"])
+        else:
+            raise StartupError(message=self.fail_reason)
 
     def _renew_tokens(self):
         for interface in self.config.get("interfaces"):
@@ -80,6 +128,7 @@ class WireguardManager:
                 print(f"Error updating config file of {interface['name']}")
 
     def start(self):
+        self._load_config_file()
         self._renew_tokens()
         self._update_wireguard_config()
         time_loop.start(block=True)
