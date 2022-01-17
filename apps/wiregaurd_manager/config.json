@@ -1,0 +1,15 @@
+{
+  "interfaces": [
+    {
+      "name": "wg0",
+      "overlay_id": "aaa714464dd448439924c7e5908b5f0c",
+      "device_id": "00f87c314be94f03b6d2f55d4b6f26e9",
+      "virtual_address": "10.0.0.1/24",
+      "listen_port": 51820,
+      "token": "pWZvt6DeKf1iYDJZJkdf_A"
+    }
+  ],
+  "manager_server_address": "http://meshmash.vikaa.fi:49328",
+  "token_refresh_interval": 1,
+  "config_update_interval": 1
+}
