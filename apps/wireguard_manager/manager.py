@@ -45,7 +45,7 @@ class WireguardManager:
 
     def _setup_key_pair(self, interface):
         private_key_path = f"/etc/wireguard/privatekey_{interface.get('name')}"
-        public_key_path = f"/etc/wireguard/publickey-{interface.get('name')}"
+        public_key_path = f"/etc/wireguard/publickey_{interface.get('name')}"
 
         os.system("umask 077 /etc/wireguard")
         os.system(f"wg genkey | tee {private_key_path} | wg pubkey > {public_key_path}")
@@ -58,7 +58,7 @@ class WireguardManager:
                 "public_key": file.read().strip()
             }
 
-        response = requests.put(f"{self.management_server_addr}/devices/{interface['device_id']}", data=updated_data,
+        response = requests.put(f"{self.management_server_addr}/devices/{interface['device_id']}", data=json.dumps(updated_data),
                                 headers={
                                     "Authorization": f"Bearer {interface['token']}",
                                     "Content-Type": "application/json"
@@ -101,7 +101,7 @@ class WireguardManager:
                 "Content-Type": "application/json"
             })
 
-            if response.status_code == 200:
+            if response:
                 interface["token"] = response.json()["token"]
                 interface["token_expiry_ts"] = response.json()["expiry_ts"]
             else:

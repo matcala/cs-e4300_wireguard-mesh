@@ -1,4 +1,4 @@
 .vagrant/
 .DS_Store
 .idea/
-apps/wiregaurd_manager/venv
+apps/wireguard_manager/venv

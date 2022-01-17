@@ -9,14 +9,24 @@ ip6tables-save > /etc/iptables/rules.v6
 
 
 ##install docker
-cd /home/vagrant
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh ./get-docker.sh
+#cd /home/vagrant
+#curl -fsSL https://get.docker.com -o get-docker.sh
+#sudo sh ./get-docker.sh
 
 ##build image
-cd /home/vagrant/server_app
-docker build . -t cloud/node-web-app
+#cd /home/vagrant/server_app
+#docker build . -t cloud/node-web-app
 
 ##run containers
-docker run -p 9999:8080 -d cloud/node-web-app
-docker run -p 9998:8080 -d cloud/node-web-app
+#docker run -p 9999:8080 -d cloud/node-web-app
+#docker run -p 9998:8080 -d cloud/node-web-app
+
+sudo apt update
+sudo apt install -y wireguard
+sudo apt install -y python3-pip
+sudo -H pip3 install virtualenv
+
+cd /home/vagrant/wireguard_manager
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
