@@ -1,3 +1,4 @@
 .vagrant/
 .DS_Store
-./apps/mesh_config/.env
+./apps/overlay_manager/.env
+./apps/overlay_manager/__pycache__
