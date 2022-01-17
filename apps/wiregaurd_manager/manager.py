@@ -9,18 +9,22 @@ import re
 import hashlib
 import os
 
-from apps.wiregaurd_manager.exceptions import StartupError
+from exceptions import StartupError
 
 time_loop = Timeloop()
 
 
 class WireguardManager:
+    MANAGER_DIR = "wireguard_manager"
     CONFIG_FILE_PARAMETERS = ["interfaces", "manager_server_address"]
     INTERFACE_CONFIG_PARAMETERS = ["name", "overlay_id", "device_id", "virtual_address", "listen_port", "token"]
+    DEFAULT_CONFIG_PATH = f"/etc/{MANAGER_DIR}/config.json"
 
-    def __init__(self):
+    def __init__(self, config_file_path=DEFAULT_CONFIG_PATH):
         self.config = {}
         self.fail_reason = ""
+        print(os.system(f"mkdir /etc/{self.MANAGER_DIR}"))
+        self.config_file_path = config_file_path
 
     def _is_config_valid(self, config: dict):
         config_keys = config.keys()
@@ -66,8 +70,11 @@ class WireguardManager:
             raise StartupError(f"Could not update {interface['name']}'s public key")
 
     def _load_config_file(self):
-        with open("config.json", "r") as file:
-            self.config = json.load(file)
+        try:
+            with open(self.config_file_path, "r") as file:
+                self.config = json.load(file)
+        except FileNotFoundError:
+            raise StartupError(f"No config file found in this path: {self.config_file_path}")
 
         if self._is_config_valid(self.config):
             self.management_server_addr = self.config["manager_server_address"]
