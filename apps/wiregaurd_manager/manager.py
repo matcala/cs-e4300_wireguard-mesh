@@ -8,6 +8,7 @@ from datetime import timedelta
 import re
 import hashlib
 import os
+import sys
 
 from exceptions import StartupError
 
@@ -23,7 +24,7 @@ class WireguardManager:
     def __init__(self, config_file_path=DEFAULT_CONFIG_PATH):
         self.config = {}
         self.fail_reason = ""
-        print(os.system(f"mkdir /etc/{self.MANAGER_DIR}"))
+        os.system(f"mkdir /etc/{self.MANAGER_DIR}")
         self.config_file_path = config_file_path
 
     def _is_config_valid(self, config: dict):
@@ -150,5 +151,8 @@ class WireguardManager:
 
 
 if __name__ == "__main__":
-    manager = WireguardManager()
+    if len(sys.argv) > 1:
+        manager = WireguardManager(config_file_path=sys.argv[1])
+    else:
+        manager = WireguardManager()
     manager.start()
