@@ -116,14 +116,22 @@ class WireguardManager:
                 peer_config = re.sub(r"Peer \d+", "Peer", peer_config)
 
                 peer_config_hash = hashlib.sha256(peer_config.encode())
+                previous_hash = interface.get("config_hash")
 
-                if interface.get("config_hash") != peer_config_hash:
+                if previous_hash is None:
+                    os.system(f"systemctl enable wg-quick@{interface['name']}")
+                    os.system(f"systemctl start wg-quick@{interface['name']}")
+                    interface["config_hash"] = peer_config_hash
+
+                    with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
+                        file.write(interface["config"] + peer_config)
+
+                elif previous_hash != peer_config_hash:
                     os.system(f"systemctl restart wg-quick@{interface['name']}")
+                    interface["config_hash"] = peer_config_hash
 
-                interface["config_hash"] = peer_config_hash
-
-                with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
-                    file.write(interface["config"] + peer_config)
+                    with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
+                        file.write(interface["config"] + peer_config)
             else:
                 print(f"Error updating config file of {interface['name']}")
 
