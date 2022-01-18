@@ -11,7 +11,7 @@ ip6tables-save > /etc/iptables/rules.v6
 cd /home/vagrant/client_app
 npm install
 
-##edit config file to server's virtual network
+## TODO edit config file to server's virtual network
 
 sudo apt update
 sudo apt install -y wireguard

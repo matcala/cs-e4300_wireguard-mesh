@@ -58,7 +58,8 @@ class WireguardManager:
                 "public_key": file.read().strip()
             }
 
-        response = requests.put(f"{self.management_server_addr}/devices/{interface['device_id']}", data=json.dumps(updated_data),
+        response = requests.put(f"{self.management_server_addr}/devices/{interface['device_id']}",
+                                data=json.dumps(updated_data),
                                 headers={
                                     "Authorization": f"Bearer {interface['token']}",
                                     "Content-Type": "application/json"
@@ -107,9 +108,6 @@ class WireguardManager:
             else:
                 print(f"Error updating token of {interface['name']}")
 
-        with open("config.json", "w") as file:
-            file.write(json.dumps(self.config))
-
     def _update_wireguard_config(self):
         for interface in self.config.get("interfaces"):
             response = requests.get(
@@ -123,23 +121,23 @@ class WireguardManager:
                 peer_config = response.content.decode().replace(": ", ":")
                 peer_config = re.sub(r"Peer \d+", "Peer", peer_config)
 
-                peer_config_hash = hashlib.sha256(peer_config.encode())
+                peer_config_hash = hashlib.sha256(peer_config.encode()).hexdigest()
                 previous_hash = interface.get("config_hash")
 
                 if previous_hash is None:
+                    with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
+                        file.write(interface["config"] + peer_config)
+
                     os.system(f"systemctl enable wg-quick@{interface['name']}")
                     os.system(f"systemctl start wg-quick@{interface['name']}")
                     interface["config_hash"] = peer_config_hash
 
+                elif previous_hash != peer_config_hash:
                     with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
                         file.write(interface["config"] + peer_config)
 
-                elif previous_hash != peer_config_hash:
                     os.system(f"systemctl restart wg-quick@{interface['name']}")
                     interface["config_hash"] = peer_config_hash
-
-                    with open(f"/etc/wireguard/{interface['name']}.conf", "w") as file:
-                        file.write(interface["config"] + peer_config)
             else:
                 print(f"Error updating config file of {interface['name']}")
 
