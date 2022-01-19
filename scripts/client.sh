@@ -23,6 +23,15 @@ cd /home/vagrant/wireguard_manager
 chmod a+x start.sh
 chmod a+x stop.sh
 
+
+cat << EOF > /home/vagrant/client_app/config.json
+{
+  "server_ip": $1,
+  "server_port": "8080",
+  "log_file": "/var/log/client.log"
+}
+EOF
+
 ## Run wireguard manager as a service
 cat << EOF > etc/systemd/system/wg_manager.service
 [Unit]
