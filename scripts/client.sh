@@ -11,20 +11,8 @@ ip6tables-save > /etc/iptables/rules.v6
 cd /home/vagrant/client_app
 npm install
 
-## TODO edit config file to server's virtual network
 
-
-## Install wireguard manager software
-sudo apt update
-sudo apt install -y wireguard
-sudo apt install -y python3-pip
-pip3 install -r requirements.txt
-cd /home/vagrant/wireguard_manager
-chmod a+x start.sh
-chmod a+x stop.sh
-
-
-cat << EOF > /home/vagrant/client_app/config.json
+cat << EOF > config.json
 {
   "server_ip": $1,
   "server_port": "8080",
@@ -32,8 +20,18 @@ cat << EOF > /home/vagrant/client_app/config.json
 }
 EOF
 
+## Install wireguard manager software
+sudo apt update
+sudo apt install -y wireguard
+sudo apt install -y python3-pip
+cd /home/vagrant/wireguard_manager
+pip3 install -r requirements.txt
+chmod a+x start.sh
+chmod a+x stop.sh
+
+
 ## Run wireguard manager as a service
-cat << EOF > etc/systemd/system/wg_manager.service
+cat << EOF > /etc/systemd/system/wg_manager.service
 [Unit]
 Description=wg_manager service
 After=network.target

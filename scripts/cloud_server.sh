@@ -9,13 +9,13 @@ ip6tables-save > /etc/iptables/rules.v6
 
 
 ##install docker
-cd /home/vagrant
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh ./get-docker.sh
+#cd /home/vagrant
+#curl -fsSL https://get.docker.com -o get-docker.sh
+#sudo sh ./get-docker.sh
 
 ##build image
-cd /home/vagrant/server_app
-docker build . -t cloud/node-web-app
+#cd /home/vagrant/server_app
+#docker build . -t cloud/node-web-app
 
 ##run containers
 #docker run -p 9999:8080 -d cloud/node-web-app
@@ -25,13 +25,13 @@ docker build . -t cloud/node-web-app
 sudo apt update
 sudo apt install -y wireguard
 sudo apt install -y python3-pip
-pip3 install -r requirements.txt
 cd /home/vagrant/wireguard_manager
+pip3 install -r requirements.txt
 chmod a+x start.sh
 chmod a+x stop.sh
 
 ## Run wireguard manager as a service
-cat << EOF > etc/systemd/system/wg_manager.service
+cat << EOF > /etc/systemd/system/wg_manager.service
 [Unit]
 Description=wg_manager service
 After=network.target

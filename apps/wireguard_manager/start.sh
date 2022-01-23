@@ -1,2 +1,2 @@
 #!/bin/bash
-/usr/bin/python3 /home/vagrant/wireguard_manager/manager.py
+sudo /usr/bin/python3 /home/vagrant/wireguard_manager/manager.py
