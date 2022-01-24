@@ -9,7 +9,8 @@ import requests
 from datetime import timedelta
 import re
 import hashlib
-import os
+from os import listdir, system
+from os.path import isfile, join
 import sys
 
 from exceptions import StartupError
@@ -48,8 +49,8 @@ class InterfaceManager(Thread):
         private_key_path = f"/etc/wireguard/privatekey_{self.interface['name']}"
         public_key_path = f"/etc/wireguard/publickey_{self.interface['name']}"
 
-        os.system("umask 077 /etc/wireguard")
-        os.system(f"wg genkey | tee {private_key_path} | wg pubkey > {public_key_path}")
+        system("umask 077 /etc/wireguard")
+        system(f"wg genkey | tee {private_key_path} | wg pubkey > {public_key_path}")
 
         with open(private_key_path, "r") as file:
             self.interface["private_key"] = file.read().strip()
@@ -127,15 +128,15 @@ class InterfaceManager(Thread):
                 with open(f"/etc/wireguard/{self.interface['name']}.conf", "w") as file:
                     file.write(self.interface["config"] + peer_config)
 
-                os.system(f"systemctl enable wg-quick@{self.interface['name']}")
-                os.system(f"systemctl start wg-quick@{self.interface['name']}")
+                system(f"systemctl enable wg-quick@{self.interface['name']}")
+                system(f"systemctl start wg-quick@{self.interface['name']}")
                 self.interface["config_hash"] = peer_config_hash
 
             elif previous_hash != peer_config_hash:
                 with open(f"/etc/wireguard/{self.interface['name']}.conf", "w") as file:
                     file.write(self.interface["config"] + peer_config)
 
-                os.system(f"systemctl restart wg-quick@{self.interface['name']}")
+                system(f"systemctl restart wg-quick@{self.interface['name']}")
                 self.interface["config_hash"] = peer_config_hash
         else:
             print(f"Error updating config file of {self.interface['name']}")
@@ -147,6 +148,9 @@ class InterfaceManager(Thread):
         self.time_loop.start()
         self.stop_event.wait()
         print("Exiting...")
+
+    def stop(self):
+        self.stop_event.set()
 
 
 class WireguardManager:
@@ -161,7 +165,17 @@ class WireguardManager:
             self.config_files_dir = config_files_dir + "/"
 
     def _check_for_new_config(self):
-        pass
+        current_config_files = [join(self.config_files_dir, file_name) for file_name in listdir(self.config_files_dir)
+                                if isfile(join(self.config_files_dir, file_name))]
+
+        for file in current_config_files:
+            if file not in self.threads:
+                self.threads[file] = InterfaceManager(file)
+                self.threads[file].start()
+
+        for key in self.threads.keys():
+            if key not in current_config_files:
+                self.threads[key].stop()
 
     def run(self):
         while True:
@@ -171,7 +185,7 @@ class WireguardManager:
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        manager = InterfaceManager(config_files_dir=sys.argv[1])
+        manager = WireguardManager(config_files_dir=sys.argv[1])
     else:
-        manager = InterfaceManager("/etc/wireguard_manager/config.json")
+        manager = WireguardManager()
     manager.run()
