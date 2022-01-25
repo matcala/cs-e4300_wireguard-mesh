@@ -5,3 +5,4 @@
 .idea/
 apps/wireguard_manager/venv
 apps/wireguard_manager/__pycache__
+*.conf

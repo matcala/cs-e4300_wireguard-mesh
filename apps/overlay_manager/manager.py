@@ -1,9 +1,9 @@
-from email.mime import base
 import json
 import requests
 import os
 from exceptions import StartupError, DeviceRegistrationError, CannotAddToOverlay, OverlayRegistrationError
 from dotenv import load_dotenv
+
 
 class MeshManager:
 
@@ -20,14 +20,13 @@ class MeshManager:
             self.api_endpoint = self.config.get("mesh_api_endpoint")
             self.api_key = os.environ.get("API_KEY")
             self.overlay_api_headers = {
-                    "x-api-key": self.api_key,
-                    "Content-Type": "application/json"
-                        }
-        except:
+                "x-api-key": self.api_key,
+                "Content-Type": "application/json"
+            }
+        except Exception:
             raise StartupError("Error while creating ")
 
-
-##########################   MESH    ##########################
+    ##########################   MESH    ##########################
 
     def _create_mesh(self):
         """
@@ -48,9 +47,9 @@ class MeshManager:
                 device_creation_response = self._create_device(device)
                 device.update(device_creation_response.items())
                 device_signup_response = self._add_device_to_overlay(
-                                                {"device_id": device['device_id']},
-                                                overlay['overlay_id']
-                                                )
+                    {"device_id": device['device_id']},
+                    overlay['overlay_id']
+                )
 
                 interface_obj = self.output_config.get('interface')
                 interface_obj['name'] = "wg0"
@@ -59,9 +58,8 @@ class MeshManager:
                 interface_obj['virtual_address'] = device_signup_response['tunnel_ip']
                 interface_obj['listen_port'] = device_creation_response['listen_port']
                 interface_obj['token'] = device_creation_response['token']
-                
-                self._dump_output_config(device['hostname'], self.output_config)
 
+                self._dump_output_config(device['hostname'], self.output_config)
 
     def _destroy_mesh(self):
         """
@@ -69,17 +67,16 @@ class MeshManager:
         """
         overlays_response = self._get_overlays()
 
-        if not "error" in overlays_response:
+        if "error" not in overlays_response:
             for overlay_id in overlays_response.get('overlays'):
                 self._delete_overlay({"overlay_id": overlay_id})
 
         devices_response = self._get_devices()
-        if not "error" in devices_response:
+        if "error" not in devices_response:
             for device_id in devices_response.get('devices'):
                 self._delete_device({"device_id": device_id})
 
-
-##########################   OVERLAYS    ##########################
+    ##########################   OVERLAYS    ##########################
 
     def _create_overlay(self, overlay: dict) -> dict:
         """
@@ -88,16 +85,14 @@ class MeshManager:
         """
         body = json.dumps(overlay)
         response = requests.post(f"{self.api_endpoint}/overlays",
-                                data=body,
-                                headers=self.overlay_api_headers
-                                )
-        
+                                 data=body,
+                                 headers=self.overlay_api_headers
+                                 )
+
         if response.status_code == 200:
             return response.json()
-        else:    
+        else:
             raise OverlayRegistrationError(f'Failed while creating overlay {overlay["overlay_name"]}')
-
-    
 
     def _get_overlays(self) -> dict:
         """
@@ -114,11 +109,10 @@ class MeshManager:
         Deletes the overlay with the given id, if present.
         """
         response = requests.delete(f"{self.api_endpoint}/overlays/{overlay_id['overlay_id']}",
-                                headers=self.overlay_api_headers
-                                )
+                                   headers=self.overlay_api_headers
+                                   )
 
-                
-##########################   DEVICES    ##########################
+    ##########################   DEVICES    ##########################
 
     def _create_device(self, device: dict) -> dict:
         """
@@ -127,34 +121,31 @@ class MeshManager:
         """
         body = json.dumps(device)
         response = requests.post(f"{self.api_endpoint}/devices",
-                                headers=self.overlay_api_headers
-                                )
-        
+                                 headers=self.overlay_api_headers
+                                 )
+
         if response.status_code == 200:
             return response.json()
-        else:    
+        else:
             raise DeviceRegistrationError(f'Failed while creating device {device["device_name"]}')
 
-    
     def _get_devices(self) -> dict:
         """
         Returns all existing devices.
         """
         response = requests.get(f"{self.api_endpoint}/devices",
-                            headers=self.overlay_api_headers
-                            )
+                                headers=self.overlay_api_headers
+                                )
 
         return response.json()
 
-
-    def _delete_device(self, device_id: dict) -> dict:
+    def _delete_device(self, device_id: dict):
         """
         Deletes the device with device_id, if present.
         """
         response = requests.delete(f"{self.api_endpoint}/devices/{device_id['device_id']}",
-                                headers=self.overlay_api_headers
-                                )
-
+                                   headers=self.overlay_api_headers
+                                   )
 
     def _add_device_to_overlay(self, device_id: dict, overlay_id: str) -> dict:
         """
@@ -165,39 +156,39 @@ class MeshManager:
         """
         body = json.dumps(device_id)
         response = requests.post(f"{self.api_endpoint}/overlays/{overlay_id}/devices",
-                                data=body,
-                                headers=self.overlay_api_headers
-                                )
-        
+                                 data=body,
+                                 headers=self.overlay_api_headers
+                                 )
+
         if response.status_code == 200:
             return response.json()
-        else:    
-            raise DeviceRegistrationError(f'Failed while signing device {device_id["device_id"]} to overlay {overlay_id}')
+        else:
+            raise DeviceRegistrationError(
+                f'Failed while signing device {device_id["device_id"]} to overlay {overlay_id}')
 
-
-#######################################################################################
+    #######################################################################################
 
     def _load_config_file(self):
         with open("config.json", "r") as file:
             self.config = json.load(file)
 
-    def _init_output_confifg(self):
+    def _init_output_config(self):
         self.output_config['interface'] = {}
         self.output_config['manager_server_address'] = self.api_endpoint
         self.output_config['token_refresh_interval'] = self.default_token_refresh_interval
         self.output_config['config_update_interval'] = self.default_config_update_interval
 
-        
-    def _dump_output_config(self, base_filename: str, data: dict):
-        with open(f"../../{base_filename}.conf", "w") as config:
+    @staticmethod
+    def _dump_output_config(base_filename: str, data: dict):
+        with open(f"../{base_filename}.conf", "w") as config:
             config.write(json.dumps(data))
 
     def start(self):
         self.__init__()
-        self._init_output_confifg()
+        self._init_output_config()
         self._destroy_mesh()
         self._create_mesh()
-    
+
 
 if __name__ == "__main__":
     manager = MeshManager()
