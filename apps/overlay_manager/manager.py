@@ -18,7 +18,7 @@ class MeshManager:
             self.default_config_update_interval = 2
 
             self.api_endpoint = self.config.get("mesh_api_endpoint")
-            self.api_key = os.environ.get("API_KEY")
+            self.api_key = os.environ["API_KEY"]
             self.overlay_api_headers = {
                 "x-api-key": self.api_key,
                 "Content-Type": "application/json"
@@ -52,7 +52,7 @@ class MeshManager:
                 )
 
                 interface_obj = self.output_config.get('interface')
-                interface_obj['name'] = "wg0"
+                interface_obj['name'] = device["device_name"]
                 interface_obj['overlay_id'] = overlay['overlay_id']
                 interface_obj['device_id'] = device_creation_response['device_id']
                 interface_obj['virtual_address'] = device_signup_response['tunnel_ip']
@@ -184,7 +184,6 @@ class MeshManager:
             config.write(json.dumps(data))
 
     def start(self):
-        self.__init__()
         self._init_output_config()
         self._destroy_mesh()
         self._create_mesh()
