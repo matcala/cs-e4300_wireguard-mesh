@@ -61,6 +61,8 @@ class MeshManager:
 
                 self._dump_output_config(device['hostname'], self.output_config)
 
+        print('\n[+++] Mesh creation completed.')
+
     def _destroy_mesh(self):
         """
         Deletes all devices and overlays present on the management API.
@@ -83,6 +85,7 @@ class MeshManager:
         Creates the overlay with the given name.
         Returns overlay object created by the API.
         """
+        print(f"[+] Creating overlay: {overlay['overlay_name']}")
         body = json.dumps(overlay)
         response = requests.post(f"{self.api_endpoint}/overlays",
                                  data=body,
@@ -108,6 +111,7 @@ class MeshManager:
         """
         Deletes the overlay with the given id, if present.
         """
+        print(f"[-] Deleting overlay: {overlay_id['overlay_id']}")
         response = requests.delete(f"{self.api_endpoint}/overlays/{overlay_id['overlay_id']}",
                                    headers=self.overlay_api_headers
                                    )
@@ -119,6 +123,7 @@ class MeshManager:
         Creates the passed device object in the API.
         Returns device object created by the API.
         """
+        print(f"[+] Creating device: {device['device_name']}")
         body = json.dumps(device)
         response = requests.post(f"{self.api_endpoint}/devices",
                                 data=body,
@@ -144,6 +149,7 @@ class MeshManager:
         """
         Deletes the device with device_id, if present.
         """
+        print(f"[-] Deleting device: {device_id['device_id']}")
         response = requests.delete(f"{self.api_endpoint}/devices/{device_id['device_id']}",
                                    headers=self.overlay_api_headers
                                    )
@@ -155,6 +161,7 @@ class MeshManager:
         device: dict with device full information;
         overlay_id: string of the overlay ID returned by the API during overlay creation.
         """
+        print(f"[+] Adding device {device_id['device_id']} to overlay: {overlay_id}")
         body = json.dumps(device_id)
         response = requests.post(f"{self.api_endpoint}/overlays/{overlay_id}/devices",
                                  data=body,
@@ -185,6 +192,7 @@ class MeshManager:
             config.write(json.dumps(data))
 
     def start(self):
+        print('[+++] Mesh manager starting...\n')
         self._init_output_config()
         self._destroy_mesh()
         self._create_mesh()
