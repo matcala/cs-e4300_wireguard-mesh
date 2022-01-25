@@ -2,16 +2,56 @@
   "mesh_api_endpoint": "http://meshmash.vikaa.fi:49340",
   "overlays": [
     {
-      "overlay_name": "site_a",
-      "devices": [
+        "overlay_name": "site_a",
+        "devices": [
         {
           "hostname": "client1.site-a.com",
           "public_ip": "10.1.0.2",
           "public_key": "",
           "listen_port": "4444",
           "device_name": "client1-a"
+        },
+        {
+          "hostname": "client2.site-a.com",
+          "public_ip": "10.1.0.3",
+          "public_key": "",
+          "listen_port": "4444",
+          "device_name": "client2-a"
+        },
+        {
+          "hostname": "server.site-a.com",
+          "public_ip": "172.30.30.30",
+          "public_key": "",
+          "listen_port": "4444",
+          "device_name": "server-a"
         }
       ]
+    },
+    {
+        "overlay_name": "site_b",
+        "devices": [
+            {
+                "hostname": "client1.site-b.com",
+                "public_ip": "10.1.0.2",
+                "public_key": "",
+                "listen_port": "5555",
+                "device_name": "client1-b"
+              },
+              {
+                "hostname": "client2.site-b.com",
+                "public_ip": "10.1.0.3",
+                "public_key": "",
+                "listen_port": "5555",
+                "device_name": "client2-b"
+              },
+              {
+                "hostname": "server.site-b.com",
+                "public_ip": "172.30.30.30",
+                "public_key": "",
+                "listen_port": "5555",
+                "device_name": "server-b"
+              }
+        ]
     }
   ]
 }

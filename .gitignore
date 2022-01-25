@@ -1,8 +1,8 @@
 .vagrant/
 .DS_Store
+.idea/
 apps/overlay_manager/.env
 apps/overlay_manager/__pycache__
-.idea/
 apps/wireguard_manager/venv
 apps/wireguard_manager/__pycache__
 apps/wireguard_configs

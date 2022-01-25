@@ -137,37 +137,43 @@ Vagrant.configure("2") do |config|
       destination: "client_app"
     client_a1.vm.provision :file, source: './apps/wireguard_manager',
       destination: "wireguard_manager"
+    client_a1.vm.provision :file, source: './apps/wireguard_configs/client1.site-a.com.json',
+                                  destination: '/etc/wireguard_manager/client1.site-a.com.json'
     # Install dependencies and define the NAT
     client_a1.vm.provision :shell, run: "always", path: "scripts/client.sh"
   end
 
-  # # Client A2
-  # config.vm.define "client-a2" do |client_a2|
-  #   client_a2.vm.box = "base"
-  #   client_a2.vm.hostname = "client-a2"
-  #   client_a2.vbguest.auto_update = false
-  #   ## NETWORK INTERFACES
-  #   # Interface towards customer site network
-  #   client_a2.vm.network "private_network",
-  #     ip: "10.1.0.3",
-  #     netmask: "255.255.0.0",
-  #     virtualbox__intnet: "intranet_a"
-  #   client_a2.vm.provider "virtualbox" do |vb|
-  #     vb.name = "client-a2"
-  #     # Change the default Vagrant ssh address
-  #     vb.customize ['modifyvm', :id, '--natnet1', '192.168.115.0/24']
-  #     # Performance
-  #     vb.cpus = 1
-  #     vb.memory = 512
-  #     vb.linked_clone = true
-  #     vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
-  #   end
-  #   # Client app
-  #   client_a2.vm.provision :file, source: './apps/client_app',
-  #     destination: "client_app"
-  #   # Install dependencies and define the NAT
-  #   client_a2.vm.provision :shell, run: "always", path: "scripts/client.sh"
-  # end
+  # Client A2
+  config.vm.define "client-a2" do |client_a2|
+    client_a2.vm.box = "base"
+    client_a2.vm.hostname = "client-a2"
+    client_a2.vbguest.auto_update = false
+    ## NETWORK INTERFACES
+    # Interface towards customer site network
+    client_a2.vm.network "private_network",
+      ip: "10.1.0.3",
+      netmask: "255.255.0.0",
+      virtualbox__intnet: "intranet_a"
+    client_a2.vm.provider "virtualbox" do |vb|
+      vb.name = "client-a2"
+      # Change the default Vagrant ssh address
+      vb.customize ['modifyvm', :id, '--natnet1', '192.168.115.0/24']
+      # Performance
+      vb.cpus = 1
+      vb.memory = 512
+      vb.linked_clone = true
+      vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+    end
+    # Client app
+    client_a2.vm.provision :file, source: './apps/client_app',
+      destination: "client_app"
+    client_a2.vm.provision :file, source: './apps/wireguard_manager',
+      destination: "wireguard_manager"
+    client_a2.vm.provision :file, source: './apps/wireguard_configs/client2.site-a.com.json',
+                                  destination: '/etc/wireguard_manager/client2.site-a.com.json'
+    # Install dependencies and define the NAT
+    client_a2.vm.provision :shell, run: "always", path: "scripts/client.sh"
+  end
 
   #######################
   ## Customer site B   ##
@@ -232,62 +238,71 @@ Vagrant.configure("2") do |config|
   #   server_b.vm.provision :shell, run: "always", path: "scripts/local_server.sh"
   # end
 
-  # Client B1
-  # config.vm.define "client-b1" do |client_b1|
-  #   client_b1.vm.box = "base"
-  #   client_b1.vm.hostname = "client-b1"
-  #   client_b1.vbguest.auto_update = false
-  #   ## NETWORK INTERFACES
-  #   # Interface towards customer site network
-  #   client_b1.vm.network "private_network",
-  #     ip: "10.1.0.2",
-  #     netmask: "255.255.0.0",
-  #     virtualbox__intnet: "intranet_b"
-  #   client_b1.vm.provider "virtualbox" do |vb|
-  #     vb.name = "client-b1"
-  #     # Change the default Vagrant ssh address
-  #     vb.customize ['modifyvm', :id, '--natnet1', '192.168.118.0/24']
-  #     # Performance
-  #     vb.cpus = 1
-  #     vb.memory = 512
-  #     vb.linked_clone = true
-  #     vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
-  #   end
-  #   # Client app
-  #   client_b1.vm.provision :file, source: './apps/client_app',
-  #     destination: "client_app"
-  #   # Install dependencies and define the NAT
-  #   client_b1.vm.provision :shell, run: "always", path: "scripts/client.sh"
-  # end
+  #Client B1
+  config.vm.define "client-b1" do |client_b1|
+    client_b1.vm.box = "base"
+    client_b1.vm.hostname = "client-b1"
+    client_b1.vbguest.auto_update = false
+    ## NETWORK INTERFACES
+    # Interface towards customer site network
+    client_b1.vm.network "private_network",
+      ip: "10.1.0.2",
+      netmask: "255.255.0.0",
+      virtualbox__intnet: "intranet_b"
+    client_b1.vm.provider "virtualbox" do |vb|
+      vb.name = "client-b1"
+      # Change the default Vagrant ssh address
+      vb.customize ['modifyvm', :id, '--natnet1', '192.168.118.0/24']
+      # Performance
+      vb.cpus = 1
+      vb.memory = 512
+      vb.linked_clone = true
+      vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+    end
+    # Client app
+    client_b1.vm.provision :file, source: './apps/client_app',
+      destination: "client_app"
+    client_b1.vm.provision :file, source: './apps/wireguard_manager',
+      destination: "wireguard_manager"
+    client_b1.vm.provision :file, source: './apps/wireguard_configs/client1.site-b.com.json',
+                                  destination: '/etc/wireguard_manager/client1.site-b.com.json'
+    # Install dependencies and define the NAT
+    client_b1.vm.provision :shell, run: "always", path: "scripts/client.sh"
+  end
 
-  # Client B2
-  # config.vm.define "client-b2" do |client_b2|
-  #   client_b2.vm.box = "base"
-  #   client_b2.vm.hostname = "client-b2"
-  #   client_b2.vbguest.auto_update = false
-  #   ## NETWORK INTERFACES
-  #   # Interface towards customer site network
-  #   client_b2.vm.network "private_network",
-  #     ip: "10.1.0.3",
-  #     netmask: "255.255.0.0",
-  #     virtualbox__intnet: "intranet_b"
-  #   client_b2.vm.provider "virtualbox" do |vb|
-  #     vb.name = "client-b2"
-  #     vb.customize ["modifyvm", :id, "--groups", "/vpn"]
-  #     # Change the default Vagrant ssh address
-  #     vb.customize ['modifyvm', :id, '--natnet1', '192.168.119.0/24']
-  #     # Performance
-  #     vb.cpus = 1
-  #     vb.memory = 512
-  #     vb.linked_clone = true
-  #     vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
-  #   end
-  #   # Client app
-  #   client_b2.vm.provision :file, source: './apps/client_app',
-  #     destination: "client_app"
-  #   # Install dependencies and define the NAT
-  #   client_b2.vm.provision :shell, run: "always", path: "scripts/client.sh"
-  # end
+  #Client B2
+  config.vm.define "client-b2" do |client_b2|
+    client_b2.vm.box = "base"
+    client_b2.vm.hostname = "client-b2"
+    client_b2.vbguest.auto_update = false
+    ## NETWORK INTERFACES
+    # Interface towards customer site network
+    client_b2.vm.network "private_network",
+      ip: "10.1.0.3",
+      netmask: "255.255.0.0",
+      virtualbox__intnet: "intranet_b"
+    client_b2.vm.provider "virtualbox" do |vb|
+      vb.name = "client-b2"
+      vb.customize ["modifyvm", :id, "--groups", "/vpn"]
+      # Change the default Vagrant ssh address
+      vb.customize ['modifyvm', :id, '--natnet1', '192.168.119.0/24']
+      # Performance
+      vb.cpus = 1
+      vb.memory = 512
+      vb.linked_clone = true
+      vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+    end
+    # Client app
+    client_b2.vm.provision :file, source: './apps/client_app',
+      destination: "client_app"
+    client_b2.vm.provision :file, source: './apps/wireguard_manager',
+      destination: "wireguard_manager"
+    client_b2.vm.provision :file, source: './apps/wireguard_configs/client2.site-b.com.json',
+                                  destination: '/etc/wireguard_manager/client2.site-b.com.json'
+    # Install dependencies and define the NAT
+    client_b2.vm.provision :shell, run: "always", path: "scripts/client.sh"
+
+  end
 
   ##########################
   # Cloud network S       ##
@@ -353,6 +368,10 @@ Vagrant.configure("2") do |config|
       destination: "server_app"
     server_s1.vm.provision :file, source: './apps/wireguard_manager',
       destination: "wireguard_manager"
+    server_s1.vm.provision :file, source: './apps/wireguard_configs/server.site-a.com.json',
+      destination: '/etc/wireguard_manager/server.site-a.com.json'
+    server_s1.vm.provision :file, source: './apps/wireguard_configs/server.site-b.com.json',
+      destination: '/etc/wireguard_manager/server.site-b.com.json'
     # Install dependencies and define the NAT
     server_s1.vm.provision :shell, run: "always", path: "scripts/cloud_server.sh"
   end
