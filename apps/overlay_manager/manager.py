@@ -52,7 +52,7 @@ class MeshManager:
                 )
 
                 interface_obj = self.output_config.get('interface')
-                interface_obj['name'] = device["device_name"]
+                interface_obj['name'] = "wg-" + device["device_name"]
                 interface_obj['overlay_id'] = overlay['overlay_id']
                 interface_obj['device_id'] = device_creation_response['device_id']
                 interface_obj['virtual_address'] = device_signup_response['tunnel_ip']
@@ -180,7 +180,7 @@ class MeshManager:
 
     @staticmethod
     def _dump_output_config(base_filename: str, data: dict):
-        with open(f"../{base_filename}.conf", "w") as config:
+        with open(f"/etc/wireguard_manager/{base_filename}.json", "w") as config:
             config.write(json.dumps(data))
 
     def start(self):
