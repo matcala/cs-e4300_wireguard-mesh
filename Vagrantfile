@@ -135,72 +135,74 @@ Vagrant.configure("2") do |config|
     # Client app
     client_a1.vm.provision :file, source: './apps/client_app',
       destination: "client_app"
+    client_a1.vm.provision :file, source: './apps/wireguard_manager',
+      destination: "wireguard_manager"
     # Install dependencies and define the NAT
     client_a1.vm.provision :shell, run: "always", path: "scripts/client.sh"
   end
 
-  # Client A2
-  config.vm.define "client-a2" do |client_a2|
-    client_a2.vm.box = "base"
-    client_a2.vm.hostname = "client-a2"
-    client_a2.vbguest.auto_update = false
-    ## NETWORK INTERFACES
-    # Interface towards customer site network
-    client_a2.vm.network "private_network",
-      ip: "10.1.0.3",
-      netmask: "255.255.0.0",
-      virtualbox__intnet: "intranet_a"
-    client_a2.vm.provider "virtualbox" do |vb|
-      vb.name = "client-a2"
-      # Change the default Vagrant ssh address
-      vb.customize ['modifyvm', :id, '--natnet1', '192.168.115.0/24']
-      # Performance
-      vb.cpus = 1
-      vb.memory = 512
-      vb.linked_clone = true
-      vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
-    end
-    # Client app
-    client_a2.vm.provision :file, source: './apps/client_app',
-      destination: "client_app"
-    # Install dependencies and define the NAT
-    client_a2.vm.provision :shell, run: "always", path: "scripts/client.sh"
-  end
+  # # Client A2
+  # config.vm.define "client-a2" do |client_a2|
+  #   client_a2.vm.box = "base"
+  #   client_a2.vm.hostname = "client-a2"
+  #   client_a2.vbguest.auto_update = false
+  #   ## NETWORK INTERFACES
+  #   # Interface towards customer site network
+  #   client_a2.vm.network "private_network",
+  #     ip: "10.1.0.3",
+  #     netmask: "255.255.0.0",
+  #     virtualbox__intnet: "intranet_a"
+  #   client_a2.vm.provider "virtualbox" do |vb|
+  #     vb.name = "client-a2"
+  #     # Change the default Vagrant ssh address
+  #     vb.customize ['modifyvm', :id, '--natnet1', '192.168.115.0/24']
+  #     # Performance
+  #     vb.cpus = 1
+  #     vb.memory = 512
+  #     vb.linked_clone = true
+  #     vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+  #   end
+  #   # Client app
+  #   client_a2.vm.provision :file, source: './apps/client_app',
+  #     destination: "client_app"
+  #   # Install dependencies and define the NAT
+  #   client_a2.vm.provision :shell, run: "always", path: "scripts/client.sh"
+  # end
 
   #######################
   ## Customer site B   ##
   #######################
 
   ## Gateway B
-  config.vm.define "gateway-b" do |gateway_b|
-    gateway_b.vm.box = "base"
-    gateway_b.vm.hostname = "gateway-b"
-    gateway_b.vbguest.auto_update = false
-    ## NETWORK INTERFACES
-    # Interface towards router
-    gateway_b.vm.network "private_network",
-      ip: "172.18.18.18",
-      netmask: "255.255.255.0",
-      virtualbox__intnet: "isp_link_b"
-    # Interface towards customer site network
-    gateway_b.vm.network "private_network",
-      ip: "10.1.0.1",
-      netmask: "255.255.0.0",
-      virtualbox__intnet: "intranet_b"
-    gateway_b.vm.provider "virtualbox" do |vb|
-      vb.name = "gateway-b"
-      vb.customize ["modifyvm", :id, "--groups", "/vpn"]
-      # Change the default Vagrant ssh address
-      vb.customize ['modifyvm', :id, '--natnet1', '192.168.116.0/24']
-      # Performance
-      vb.cpus = 1
-      vb.memory = 256
-      vb.linked_clone = true
-      vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
-    end
-    # Install dependencies and define the NAT
-    gateway_b.vm.provision :shell, run: "always", path: "scripts/site_b_gateway.sh"
-  end
+  # config.vm.define "gateway-b" do |gateway_b|
+  #   gateway_b.vm.box = "base"
+  #   gateway_b.vm.hostname = "gateway-b"
+  #   gateway_b.vbguest.auto_update = false
+  #   ## NETWORK INTERFACES
+  #   # Interface towards router
+  #   gateway_b.vm.network "private_network",
+  #     ip: "172.18.18.18",
+  #     netmask: "255.255.255.0",
+  #     virtualbox__intnet: "isp_link_b"
+  #   # Interface towards customer site network
+  #   gateway_b.vm.network "private_network",
+  #     ip: "10.1.0.1",
+  #     netmask: "255.255.0.0",
+  #     virtualbox__intnet: "intranet_b"
+  #   gateway_b.vm.provider "virtualbox" do |vb|
+  #     vb.name = "gateway-b"
+  #     vb.customize ["modifyvm", :id, "--groups", "/vpn"]
+  #     # Change the default Vagrant ssh address
+  #     vb.customize ['modifyvm', :id, '--natnet1', '192.168.116.0/24']
+  #     # Performance
+  #     vb.cpus = 1
+  #     vb.memory = 256
+  #     vb.linked_clone = true
+  #     vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+  #   end
+  #   # Install dependencies and define the NAT
+  #   gateway_b.vm.provision :shell, run: "always", path: "scripts/site_b_gateway.sh"
+  # end
 
   # Local server B
   # config.vm.define "server-b" do |server_b|
@@ -231,61 +233,61 @@ Vagrant.configure("2") do |config|
   # end
 
   # Client B1
-  config.vm.define "client-b1" do |client_b1|
-    client_b1.vm.box = "base"
-    client_b1.vm.hostname = "client-b1"
-    client_b1.vbguest.auto_update = false
-    ## NETWORK INTERFACES
-    # Interface towards customer site network
-    client_b1.vm.network "private_network",
-      ip: "10.1.0.2",
-      netmask: "255.255.0.0",
-      virtualbox__intnet: "intranet_b"
-    client_b1.vm.provider "virtualbox" do |vb|
-      vb.name = "client-b1"
-      # Change the default Vagrant ssh address
-      vb.customize ['modifyvm', :id, '--natnet1', '192.168.118.0/24']
-      # Performance
-      vb.cpus = 1
-      vb.memory = 512
-      vb.linked_clone = true
-      vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
-    end
-    # Client app
-    client_b1.vm.provision :file, source: './apps/client_app',
-      destination: "client_app"
-    # Install dependencies and define the NAT
-    client_b1.vm.provision :shell, run: "always", path: "scripts/client.sh"
-  end
+  # config.vm.define "client-b1" do |client_b1|
+  #   client_b1.vm.box = "base"
+  #   client_b1.vm.hostname = "client-b1"
+  #   client_b1.vbguest.auto_update = false
+  #   ## NETWORK INTERFACES
+  #   # Interface towards customer site network
+  #   client_b1.vm.network "private_network",
+  #     ip: "10.1.0.2",
+  #     netmask: "255.255.0.0",
+  #     virtualbox__intnet: "intranet_b"
+  #   client_b1.vm.provider "virtualbox" do |vb|
+  #     vb.name = "client-b1"
+  #     # Change the default Vagrant ssh address
+  #     vb.customize ['modifyvm', :id, '--natnet1', '192.168.118.0/24']
+  #     # Performance
+  #     vb.cpus = 1
+  #     vb.memory = 512
+  #     vb.linked_clone = true
+  #     vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+  #   end
+  #   # Client app
+  #   client_b1.vm.provision :file, source: './apps/client_app',
+  #     destination: "client_app"
+  #   # Install dependencies and define the NAT
+  #   client_b1.vm.provision :shell, run: "always", path: "scripts/client.sh"
+  # end
 
   # Client B2
-  config.vm.define "client-b2" do |client_b2|
-    client_b2.vm.box = "base"
-    client_b2.vm.hostname = "client-b2"
-    client_b2.vbguest.auto_update = false
-    ## NETWORK INTERFACES
-    # Interface towards customer site network
-    client_b2.vm.network "private_network",
-      ip: "10.1.0.3",
-      netmask: "255.255.0.0",
-      virtualbox__intnet: "intranet_b"
-    client_b2.vm.provider "virtualbox" do |vb|
-      vb.name = "client-b2"
-      vb.customize ["modifyvm", :id, "--groups", "/vpn"]
-      # Change the default Vagrant ssh address
-      vb.customize ['modifyvm', :id, '--natnet1', '192.168.119.0/24']
-      # Performance
-      vb.cpus = 1
-      vb.memory = 512
-      vb.linked_clone = true
-      vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
-    end
-    # Client app
-    client_b2.vm.provision :file, source: './apps/client_app',
-      destination: "client_app"
-    # Install dependencies and define the NAT
-    client_b2.vm.provision :shell, run: "always", path: "scripts/client.sh"
-  end
+  # config.vm.define "client-b2" do |client_b2|
+  #   client_b2.vm.box = "base"
+  #   client_b2.vm.hostname = "client-b2"
+  #   client_b2.vbguest.auto_update = false
+  #   ## NETWORK INTERFACES
+  #   # Interface towards customer site network
+  #   client_b2.vm.network "private_network",
+  #     ip: "10.1.0.3",
+  #     netmask: "255.255.0.0",
+  #     virtualbox__intnet: "intranet_b"
+  #   client_b2.vm.provider "virtualbox" do |vb|
+  #     vb.name = "client-b2"
+  #     vb.customize ["modifyvm", :id, "--groups", "/vpn"]
+  #     # Change the default Vagrant ssh address
+  #     vb.customize ['modifyvm', :id, '--natnet1', '192.168.119.0/24']
+  #     # Performance
+  #     vb.cpus = 1
+  #     vb.memory = 512
+  #     vb.linked_clone = true
+  #     vb.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+  #   end
+  #   # Client app
+  #   client_b2.vm.provision :file, source: './apps/client_app',
+  #     destination: "client_app"
+  #   # Install dependencies and define the NAT
+  #   client_b2.vm.provision :shell, run: "always", path: "scripts/client.sh"
+  # end
 
   ##########################
   # Cloud network S       ##
@@ -349,6 +351,8 @@ Vagrant.configure("2") do |config|
     # Server app
     server_s1.vm.provision :file, source: './apps/server_app',
       destination: "server_app"
+    server_s1.vm.provision :file, source: './apps/wireguard_manager',
+      destination: "wireguard_manager"
     # Install dependencies and define the NAT
     server_s1.vm.provision :shell, run: "always", path: "scripts/cloud_server.sh"
   end

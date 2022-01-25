@@ -1,0 +1,13 @@
+{
+  "interface": {
+    "name": "A name for the interface e.g. wg0. All file namings will follow the interface name.",
+    "overlay_id": "Overlay ID which the device belongs to",
+    "device_id": "The device's ID assigned by registering the device to API ",
+    "virtual_address": "Visrtual address assigned to the device after adding it to the overlay",
+    "listen_port": "Port on which the device is listening for wireguard packets in Integer",
+    "token": "Last valid token of the device to perform successful requests to the API"
+  },
+  "manager_server_address": "http://meshmash.vikaa.fi:49328",
+  "token_refresh_interval": "How often in minutes to refresh the token (INTEGER)",
+  "config_update_interval": "How often in minutes to refresh the config file (INTEGER)"
+}
