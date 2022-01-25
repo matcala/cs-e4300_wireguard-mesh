@@ -121,8 +121,9 @@ class MeshManager:
         """
         body = json.dumps(device)
         response = requests.post(f"{self.api_endpoint}/devices",
-                                 headers=self.overlay_api_headers
-                                 )
+                                data=body,
+                                headers=self.overlay_api_headers
+                                )
 
         if response.status_code == 200:
             return response.json()
@@ -180,7 +181,7 @@ class MeshManager:
 
     @staticmethod
     def _dump_output_config(base_filename: str, data: dict):
-        with open(f"/etc/wireguard_manager/{base_filename}.json", "w") as config:
+        with open(f"../wireguard_configs/{base_filename}.json", "w") as config:
             config.write(json.dumps(data))
 
     def start(self):

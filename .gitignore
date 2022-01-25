@@ -5,4 +5,4 @@ apps/overlay_manager/__pycache__
 .idea/
 apps/wireguard_manager/venv
 apps/wireguard_manager/__pycache__
-*.json
+apps/wireguard_configs
