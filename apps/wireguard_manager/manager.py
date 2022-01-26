@@ -107,6 +107,9 @@ class InterfaceManager(Thread):
             self.interface["token"] = response.json()["token"]
             self.interface["token_expiry_ts"] = response.json()["expiry_ts"]
         else:
+            print(response.status_code)
+            if response.status_code == 400:
+                print(response.json())
             print(f"Error updating token of {self.interface['name']}")
 
     def _update_wireguard_config(self):
@@ -139,6 +142,9 @@ class InterfaceManager(Thread):
                 system(f"systemctl restart wg-quick@{self.interface['name']}")
                 self.interface["config_hash"] = peer_config_hash
         else:
+            print(response.status_code)
+            if response.status_code == 400:
+                print(response.json())
             print(f"Error updating config file of {self.interface['name']}")
 
     def run(self):
@@ -147,6 +153,7 @@ class InterfaceManager(Thread):
         self._update_wireguard_config()
         self.time_loop.start()
         self.stop_event.wait()
+        system(f"systemctl stop wg-quick@{self.interface['name']}")
         print("Exiting...")
 
     def stop(self):

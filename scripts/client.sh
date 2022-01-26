@@ -7,14 +7,16 @@ route add default gw 10.1.0.1
 iptables-save > /etc/iptables/rules.v4
 ip6tables-save > /etc/iptables/rules.v6
 
+
+sudo mkdir /etc/wireguard_manager/
+sudo mv /home/vagrant/wireguard_configs/*.json /etc/wireguard_manager/
 ## Install app
 cd /home/vagrant/client_app
 npm install
 
-
 cat << EOF > config.json
 {
-  "server_ip": $1,
+  "server_ip": 10.0.0.1,
   "server_port": "8080",
   "log_file": "/var/log/client.log"
 }
@@ -22,8 +24,7 @@ EOF
 
 ## Install wireguard manager software
 sudo apt update
-sudo apt install -y wireguard
-sudo apt install -y python3-pip
+sudo apt install -y wireguard python3-pip
 cd /home/vagrant/wireguard_manager
 pip3 install -r requirements.txt
 chmod a+x start.sh
@@ -50,6 +51,6 @@ PIDFile=/tmp/wg_manager.pid
 WantedBy=multi-user.target
 EOF
 
-sudo systemctl enable /etc/systemd/system/wg_manager.service
-sudo systemctl daemon-reload
-sudo service wg_manager start
+#sudo systemctl enable /etc/systemd/system/wg_manager.service
+#sudo systemctl daemon-reload
+#sudo service wg_manager start
