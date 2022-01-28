@@ -3,8 +3,13 @@
 ## Traffic going to the internet
 route add default gw 10.1.0.1
 
+
+## Redirect wireguard overlay trrafic to the right mapped docker port
 iptables -t nat -I PREROUTING -p tcp -i wg-server-a --dport 8080 -j REDIRECT --to-ports 9999
 iptables -t nat -I PREROUTING -p tcp -i wg-server-b --dport 8080 -j REDIRECT --to-ports 9998
+
+## Bloc wireguard overlays to reach the docker mapped port directly
+iptables -t mangle -I PREROUTING -p tcp --source 10.0.0.0/16 --dport 9998:9999 -j DROP
 
 ## Save the iptables rules
 iptables-save > /etc/iptables/rules.v4

@@ -15,6 +15,12 @@
           "public_ip": "10.1.0.2",
           "listen_port": "4444",
           "device_name": "client1-a"
+        },
+        {
+          "hostname": "client2.site-a.com",
+          "public_ip": "10.1.0.3",
+          "listen_port": "4444",
+          "device_name": "client2-a"
         }
       ]
     },
@@ -32,6 +38,12 @@
           "public_ip": "10.1.0.2",
           "listen_port": "5555",
           "device_name": "client1-b"
+        },
+        {
+          "hostname": "client2.site-b.com",
+          "public_ip": "10.1.0.3",
+          "listen_port": "5555",
+          "device_name": "client2-b"
         }
       ]
     }

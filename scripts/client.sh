@@ -16,7 +16,7 @@ npm install
 
 cat << EOF > config.json
 {
-  "server_ip": \"$1\",
+  "server_ip": "$1",
   "server_port": "8080",
   "log_file": "/var/log/client.log"
 }

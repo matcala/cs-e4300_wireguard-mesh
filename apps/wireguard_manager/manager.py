@@ -1,5 +1,5 @@
 import json
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 from time import sleep, time
 
 from timeloop import Timeloop
@@ -22,7 +22,7 @@ class InterfaceManager(Thread):
     CONFIG_FILE_PARAMETERS = ["interface", "manager_server_address", "token_refresh_interval", "config_update_interval"]
     INTERFACE_CONFIG_PARAMETERS = ["name", "overlay_id", "device_id", "virtual_address", "listen_port", "token"]
 
-    def __init__(self, config_file_path):
+    def __init__(self, config_file_path, request_lock):
         super().__init__()
         self.time_loop = Timeloop()
         self.daemon = True
@@ -32,6 +32,7 @@ class InterfaceManager(Thread):
         self.fail_reason = ""
         self.config_file_path = config_file_path
         self.logger = None
+        self.request_lock = request_lock
 
     def _is_config_valid(self, config: dict):
         config_keys = config.keys()
@@ -64,12 +65,13 @@ class InterfaceManager(Thread):
                 "public_key": file.read().strip()
             }
 
-        response = requests.put(f"{self.management_server_addr}/devices/{self.interface['device_id']}",
-                                data=json.dumps(updated_data),
-                                headers={
-                                    "Authorization": f"Bearer {self.interface['token']}",
-                                    "Content-Type": "application/json"
-                                })
+        with self.request_lock:
+            response = requests.put(f"{self.management_server_addr}/devices/{self.interface['device_id']}",
+                                    data=json.dumps(updated_data),
+                                    headers={
+                                        "Authorization": f"Bearer {self.interface['token']}",
+                                        "Content-Type": "application/json"
+                                    })
 
         if response:
             self.interface["private_key_path"] = private_key_path
@@ -107,10 +109,12 @@ class InterfaceManager(Thread):
             raise StartupError(message=self.fail_reason)
 
     def _renew_token(self):
-        response = requests.get(f"{self.management_server_addr}/devices/{self.interface['device_id']}/token", headers={
-            "Authorization": f"Bearer {self.interface['token']}",
-            "Content-Type": "application/json"
-        })
+        with self.request_lock:
+            response = requests.get(f"{self.management_server_addr}/devices/{self.interface['device_id']}/token",
+                                    headers={
+                                        "Authorization": f"Bearer {self.interface['token']}",
+                                        "Content-Type": "application/json"
+                                    })
 
         if response:
             previous_token = self.interface["token"]
@@ -126,12 +130,13 @@ class InterfaceManager(Thread):
         return interface_name in netifaces.interfaces()
 
     def _update_wireguard_config(self):
-        response = requests.get(
-            f"{self.management_server_addr}/overlays/{self.interface['overlay_id']}/devices/{self.interface['device_id']}/wgconfig",
-            headers={
-                "Authorization": f"Bearer {self.interface['token']}",
-                "Content-Type": "application/json"
-            })
+        with self.request_lock:
+            response = requests.get(
+                f"{self.management_server_addr}/overlays/{self.interface['overlay_id']}/devices/{self.interface['device_id']}/wgconfig",
+                headers={
+                    "Authorization": f"Bearer {self.interface['token']}",
+                    "Content-Type": "application/json"
+                })
 
         if response:
             peer_config = response.content.decode().replace(": ", ":")
@@ -184,6 +189,7 @@ class WireguardManager:
     LOG_FILE_PATH = "/var/log/"
 
     def __init__(self, config_files_dir=DEFAULT_CONFIG_DIR):
+        self.request_lock = Lock()
         self.threads = {}
         if config_files_dir[-1] == "/":
             self.config_files_dir = config_files_dir
@@ -196,7 +202,7 @@ class WireguardManager:
 
         for file in current_config_files:
             if file not in self.threads:
-                self.threads[file] = InterfaceManager(file)
+                self.threads[file] = InterfaceManager(config_file_path=file, request_lock=self.request_lock)
                 self.threads[file].start()
                 logging.info(f"Thread for {file} started")
 
