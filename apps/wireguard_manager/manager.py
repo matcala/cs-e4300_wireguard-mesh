@@ -1,6 +1,6 @@
 import json
 from threading import Thread, Event
-from time import sleep
+from time import sleep, time
 
 from timeloop import Timeloop
 from timeloop.job import Job
@@ -12,6 +12,8 @@ import hashlib
 from os import listdir, system
 from os.path import isfile, join
 import sys
+import netifaces
+import logging
 
 from exceptions import StartupError
 
@@ -29,6 +31,7 @@ class InterfaceManager(Thread):
         self.interface = None
         self.fail_reason = ""
         self.config_file_path = config_file_path
+        self.logger = None
 
     def _is_config_valid(self, config: dict):
         config_keys = config.keys()
@@ -49,8 +52,9 @@ class InterfaceManager(Thread):
         private_key_path = f"/etc/wireguard/privatekey_{self.interface['name']}"
         public_key_path = f"/etc/wireguard/publickey_{self.interface['name']}"
 
-        system("umask 077 /etc/wireguard")
-        system(f"wg genkey | tee {private_key_path} | wg pubkey > {public_key_path}")
+        if not isfile(public_key_path):
+            system("umask 077 /etc/wireguard")
+            system(f"wg genkey | tee {private_key_path} | wg pubkey > {public_key_path}")
 
         with open(private_key_path, "r") as file:
             self.interface["private_key"] = file.read().strip()
@@ -70,8 +74,9 @@ class InterfaceManager(Thread):
         if response:
             self.interface["private_key_path"] = private_key_path
             self.interface["public_key_path"] = public_key_path
+            self.logger.info(f"Public key setup, Success! {response.status_code} {json.dumps(updated_data)}")
         else:
-            raise StartupError(f"Could not update {self.interface['name']}'s public key")
+            self.logger.info(f"Update public key failed:{response.status_code} {response.json()}")
 
     def _load_config_file(self):
         try:
@@ -82,6 +87,7 @@ class InterfaceManager(Thread):
 
         if self._is_config_valid(self.config):
             self.interface = self.config["interface"]
+            self.logger = logging.getLogger(self.interface["name"])
             self.management_server_addr = self.config["manager_server_address"]
             self.time_loop.jobs.append(Job(timedelta(minutes=self.config["token_refresh_interval"]), self._renew_token))
             self.time_loop.jobs.append(
@@ -94,7 +100,10 @@ class InterfaceManager(Thread):
             self.interface["config"] = sample.format(private_key=self.interface["private_key"],
                                                      virtual_address=self.interface["virtual_address"],
                                                      listen_port=self.interface["listen_port"])
+
+            self.logger.info("Config loaded, Success!")
         else:
+            self.logger.info(f"Config load failed: {self.fail_reason}")
             raise StartupError(message=self.fail_reason)
 
     def _renew_token(self):
@@ -104,13 +113,17 @@ class InterfaceManager(Thread):
         })
 
         if response:
+            previous_token = self.interface["token"]
             self.interface["token"] = response.json()["token"]
             self.interface["token_expiry_ts"] = response.json()["expiry_ts"]
+            self.logger.info(f"Token Renew, Success! {previous_token} => {self.interface['token']}")
         else:
-            print(response.status_code)
-            if response.status_code == 400:
-                print(response.json())
-            print(f"Error updating token of {self.interface['name']}")
+            error_message = f"{response.status_code} {response.json()} {self.interface['token_expiry_ts']} {time()}"
+            self.logger.info(f"Token Renew failed: {error_message} Failed Token: {self.interface['token']}")
+
+    @staticmethod
+    def _interface_exists(interface_name):
+        return interface_name in netifaces.interfaces()
 
     def _update_wireguard_config(self):
         response = requests.get(
@@ -120,41 +133,46 @@ class InterfaceManager(Thread):
                 "Content-Type": "application/json"
             })
 
-        if response.status_code == 200:
+        if response:
             peer_config = response.content.decode().replace(": ", ":")
             peer_config = re.sub(r"Peer \d+", "Peer", peer_config)
 
             peer_config_hash = hashlib.sha256(peer_config.encode()).hexdigest()
             previous_hash = self.interface.get("config_hash")
 
-            if previous_hash is None:
-                with open(f"/etc/wireguard/{self.interface['name']}.conf", "w") as file:
-                    file.write(self.interface["config"] + peer_config)
+            wg_config_path = f"/etc/wireguard/{self.interface['name']}.conf"
 
-                system(f"systemctl enable wg-quick@{self.interface['name']}")
-                system(f"systemctl start wg-quick@{self.interface['name']}")
+            if previous_hash is None and isfile(wg_config_path):
+                with open(wg_config_path, "r") as file:
+                    previous_hash = hashlib.sha256(file.read().encode()).hexdigest()
+
+            if previous_hash != peer_config_hash:
+                self.logger.info("Updating new config")
+                with open(wg_config_path, "w") as file:
+                    file.write(self.interface["config"] + peer_config)
                 self.interface["config_hash"] = peer_config_hash
 
-            elif previous_hash != peer_config_hash:
-                with open(f"/etc/wireguard/{self.interface['name']}.conf", "w") as file:
-                    file.write(self.interface["config"] + peer_config)
+                if self._interface_exists(self.interface["name"]):
+                    system(f"systemctl restart wg-quick@{self.interface['name']}")
+                    self.logger.info("Interface restarted due to new config!")
+                else:
+                    system(f"systemctl enable wg-quick@{self.interface['name']}")
+                    system(f"systemctl start wg-quick@{self.interface['name']}")
+                    self.logger.info("Interface created!")
 
-                system(f"systemctl restart wg-quick@{self.interface['name']}")
-                self.interface["config_hash"] = peer_config_hash
+            self.logger.info("Update config, Success!")
         else:
-            print(response.status_code)
-            if response.status_code == 400:
-                print(response.json())
-            print(f"Error updating config file of {self.interface['name']}")
+            self.logger.info(f"Update config fail: {response.status_code} {response.json()}")
 
     def run(self):
         self._load_config_file()
+        self.logger.info("Starting...")
         self._renew_token()
         self._update_wireguard_config()
         self.time_loop.start()
         self.stop_event.wait()
         system(f"systemctl stop wg-quick@{self.interface['name']}")
-        print("Exiting...")
+        self.logger.info("Exting...")
 
     def stop(self):
         self.stop_event.set()
@@ -163,6 +181,7 @@ class InterfaceManager(Thread):
 class WireguardManager:
     MANAGER_DIR = "wireguard_manager"
     DEFAULT_CONFIG_DIR = f"/etc/{MANAGER_DIR}/"
+    LOG_FILE_PATH = "/var/log/"
 
     def __init__(self, config_files_dir=DEFAULT_CONFIG_DIR):
         self.threads = {}
@@ -179,18 +198,27 @@ class WireguardManager:
             if file not in self.threads:
                 self.threads[file] = InterfaceManager(file)
                 self.threads[file].start()
+                logging.info(f"Thread for {file} started")
 
         for key in self.threads.keys():
             if key not in current_config_files:
                 self.threads[key].stop()
+                logging.info(f"Thread for {key} stopped")
+
+        logging.info("Config Dir Traversed")
 
     def run(self):
+        logging.info("Manager Started")
         while True:
             self._check_for_new_config()
             sleep(5 * 60)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, handlers=[
+        logging.FileHandler(join(WireguardManager.LOG_FILE_PATH, "wg_manager.log")),
+        logging.StreamHandler()
+    ])
     if len(sys.argv) > 1:
         manager = WireguardManager(config_files_dir=sys.argv[1])
     else:

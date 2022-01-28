@@ -15,7 +15,7 @@ class MeshManager:
             self._load_config_file()
             self.output_config = {}
 
-            self.default_token_refresh_interval = 2
+            self.default_token_refresh_interval = 15
             self.default_config_update_interval = 2
 
             self.api_endpoint = self.config.get("mesh_api_endpoint")
