@@ -113,7 +113,7 @@ Vagrant.configure("2") do |config|
     client_a1.vm.provision :file, source: './apps/wireguard_configs/client1.site-a.com.json',
                            destination: 'wireguard_configs/client1.site-a.com.json'
     # Install dependencies and define the NAT
-    client_a1.vm.provision :shell, run: "always", path: "scripts/client.sh"
+    client_a1.vm.provision :shell, run: "always", path: "scripts/client.sh", args: "10.0.0.1"
   end
 
   # # Client A2
@@ -213,7 +213,7 @@ Vagrant.configure("2") do |config|
     client_b1.vm.provision :file, source: './apps/wireguard_configs/client1.site-b.com.json',
                            destination: 'wireguard_configs/client1.site-b.com.json'
     # Install dependencies and define the NAT
-    client_b1.vm.provision :shell, run: "always", path: "scripts/client.sh"
+    client_b1.vm.provision :shell, run: "always", path: "scripts/client.sh", args: "10.0.1.1"
   end
 
   # #Client B2
